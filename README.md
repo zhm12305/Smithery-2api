@@ -1,4 +1,4 @@
-# Smithery Claude Proxy
+# Smithery 2Api Proxy
 
 这是一个部署在 Linux 服务器上的 AI 接口代理项目，不是传统博客 CMS。它提供了一个带登录页、用户控制台和管理员后台的 Web 面板，对外暴露 OpenAI 兼容接口，并将请求代理到 `Smithery.ai`，同时集成了 MCP 工具发现、RikkaHub 兼容接口和若干内置工具能力。
 
