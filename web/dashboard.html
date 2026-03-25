@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>控制台 - Smithery API Proxy</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-500: #10b981;
+            --primary-600: #059669;
+            --primary-400: #34d399;
+            --bg-dark: #0a0e1a;
+            --bg-card: #111827;
+            --bg-elevated: #1f2937;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            margin: 0;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-elevated);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+
+        .dashboard {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 800;
+            font-size: 1.25rem;
+        }
+
+        .logo-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-500), #3b82f6);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 1rem;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15));
+            color: var(--primary-400);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        }
+
+        .nav-item i {
+            width: 1.25rem;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border-radius: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-500), #3b82f6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: 70px;
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+        }
+
+        .topbar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            width: 4rem;
+            height: 4rem;
+            background: var(--bg-elevated);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+        }
+
+        /* API Key Card */
+        .api-key-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .api-key-item {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            transition: all 0.3s;
+        }
+
+        .api-key-item:hover {
+            border-color: var(--primary-500);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .api-key-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .api-key-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--primary-400);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .api-key-value {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.2s;
+        }
+
+        .copy-btn:hover {
+            color: var(--primary-400);
+        }
+
+        .api-key-meta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.8), rgba(31, 41, 55, 0.8));
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.1), transparent);
+            border-radius: 50%;
+        }
+
+        .stat-label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-header {
+            padding: 2rem 2rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            padding: 1rem 2rem 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Chat Interface */
+        .chat-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            height: calc(100vh - 150px);
+        }
+
+        .chat-config {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .chat-panel {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--bg-elevated);
+        }
+
+        .message.assistant .message-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 1rem 1.25rem;
+            border-radius: 1.25rem;
+            line-height: 1.6;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+            color: white;
+            border-bottom-right-radius: 0.375rem;
+        }
+
+        .message.assistant .message-content {
+            background: var(--bg-elevated);
+            border-bottom-left-radius: 0.375rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9375rem;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 0.375rem;
+            padding: 1rem 1.25rem;
+        }
+
+        .typing-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .chat-input-area {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .chat-input-wrapper {
+            position: relative;
+        }
+
+        .chat-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            padding-right: 3rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            color: var(--text-primary);
+            resize: none;
+            min-height: 60px;
+            max-height: 200px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-500);
+        }
+
+        .send-btn {
+            position: absolute;
+            bottom: 0.75rem;
+            right: 0.75rem;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+            border: none;
+            border-radius: 0.5rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            min-width: 300px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInRight 0.4s;
+        }
+
+        .toast-success {
+            border-left: 4px solid var(--primary-500);
+        }
+
+        .toast-error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-left-color: white;
+            border-radius: 50%;
+            width: 1.25rem;
+            height: 1.25rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .topbar {
+                padding: 0 1rem;
+            }
+
+            .content-area {
+                padding: 1rem;
+            }
+
+            .chat-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                max-width: 95%;
+            }
+        }
+
+        /* 移动端响应式适配 */
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 1rem;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                transition: left 0.3s ease;
+                z-index: 200;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block !important;
+            }
+
+            .sidebar::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s;
+                z-index: -1;
+            }
+
+            .sidebar.active::before {
+                opacity: 1;
+                pointer-events: all;
+            }
+
+            .topbar-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .card {
+                padding: 1.5rem 1rem;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8125rem;
+            }
+
+            .btn i {
+                font-size: 0.875rem;
+            }
+
+            .topbar-title {
+                font-size: 1.125rem;
+            }
+
+            .topbar-actions .btn {
+                padding: 0.5rem;
+                gap: 0;
+            }
+
+            .topbar-actions .btn i {
+                margin: 0;
+            }
+
+            .topbar-actions .btn span {
+                display: none;
+            }
+
+            table {
+                font-size: 0.875rem;
+            }
+
+            .stat-value {
+                font-size: 1.75rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                max-width: 95%;
+                margin: 0 0.5rem;
+            }
+
+            .modal-header,
+            .modal-body,
+            .modal-footer {
+                padding: 1.25rem;
+            }
+
+            .toast-container {
+                top: 1rem;
+                right: 1rem;
+                left: 1rem;
+            }
+
+            .toast {
+                min-width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 1rem;
+            }
+
+            .topbar-title {
+                font-size: 1.125rem;
+            }
+
+            .hero {
+                padding: 4rem 1rem 2rem;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            table {
+                font-size: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .sidebar-nav li a {
+                font-size: 0.875rem;
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar" :class="{ active: mobileSidebarOpen }">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    Smithery
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item" :class="{ active: activeTab === 'api-keys' }"
+                    @click.prevent="activeTab = 'api-keys'; mobileSidebarOpen = false">
+                    <i class="fas fa-key"></i>
+                    <span>API 密钥</span>
+                </a>
+                <a href="#" class="nav-item" :class="{ active: activeTab === 'test' }"
+                    @click.prevent="activeTab = 'test'; mobileSidebarOpen = false">
+                    <i class="fas fa-flask"></i>
+                    <span>API 测试</span>
+                </a>
+                <a href="#" class="nav-item" :class="{ active: activeTab === 'usage' }"
+                    @click.prevent="activeTab = 'usage'; mobileSidebarOpen = false">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>使用统计</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">{{ user?.username || 'User' }}</div>
+                        <div class="user-email">{{ user?.email || '' }}</div>
+                    </div>
+                    <button class="logout-btn" @click="logout" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="topbar">
+                <button class="btn btn-ghost mobile-menu-btn" @click="mobileSidebarOpen = !mobileSidebarOpen">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="topbar-title">
+                    <span v-if="activeTab === 'api-keys'">API 密钥管理</span>
+                    <span v-else-if="activeTab === 'test'">API 测试</span>
+                    <span v-else-if="activeTab === 'usage'">使用统计</span>
+                </h1>
+                <div class="topbar-actions">
+                    <button @click="goHome" class="btn btn-ghost">
+                        <i class="fas fa-home"></i>
+                        首页
+                    </button>
+                    <button v-if="user?.is_admin" @click="goToAdmin" class="btn btn-ghost">
+                        <i class="fas fa-shield-alt"></i>
+                        管理后台
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- API Keys Tab -->
+                <div v-if="activeTab === 'api-keys'">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">我的 API 密钥</h2>
+                                <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">
+                                    管理您的访问凭证，请勿将密钥泄露给他人
+                                </p>
+                            </div>
+                            <button @click="showCreateKeyModal = true" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                创建密钥
+                            </button>
+                        </div>
+
+                        <div v-if="apiKeys.length === 0" class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <h3 style="margin-bottom: 0.5rem;">暂无 API 密钥</h3>
+                            <p>创建您的第一个 API 密钥以开始使用服务</p>
+                            <button @click="showCreateKeyModal = true" class="btn btn-primary"
+                                style="margin-top: 1.5rem;">
+                                <i class="fas fa-plus"></i>
+                                立即创建
+                            </button>
+                        </div>
+
+                        <div v-else class="api-key-list">
+                            <div v-for="key in apiKeys" :key="key.id" class="api-key-item">
+                                <div class="api-key-header">
+                                    <div class="api-key-name">{{ key.name }}</div>
+                                    <span class="badge" :class="key.is_active ? 'badge-success' : 'badge-danger'">
+                                        {{ key.is_active ? '活跃' : '已禁用' }}
+                                    </span>
+                                </div>
+
+                                <div class="api-key-value">
+                                    <code>{{ key.showToken ? key.api_key : maskToken(key.api_key) }}</code>
+                                    <button @click="key.showToken = !key.showToken" class="copy-btn"
+                                        :title="key.showToken ? '隐藏' : '显示'">
+                                        <i class="fas" :class="key.showToken ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    </button>
+                                    <button @click="copyToClipboard(key.api_key)" class="copy-btn" title="复制">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+
+                                <div class="api-key-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-clock"></i>
+                                        创建于 {{ formatDate(key.created_at) }}
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-exchange-alt"></i>
+                                        {{ key.usage_count }} 次调用
+                                    </div>
+                                    <button @click="deleteApiKey(key)" class="copy-btn"
+                                        style="color: #ef4444; margin-left: auto;" title="删除密钥">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+
+                                <p v-if="key.description"
+                                    style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.875rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                                    {{ key.description }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Tab -->
+                <div v-if="activeTab === 'test'" class="chat-container">
+                    <div class="chat-config">
+                        <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1.5rem;">
+                            <i class="fas fa-sliders-h" style="color: var(--primary-500);"></i>
+                            测试配置
+                        </h3>
+
+                        <div class="form-group">
+                            <label class="form-label">选择 API 密钥</label>
+                            <select v-model="testConfig.apiKey" class="form-select">
+                                <option value="">请选择密钥</option>
+                                <option v-for="key in apiKeys.filter(k => k.is_active)" :key="key.id"
+                                    :value="key.api_key">
+                                    {{ key.name }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">选择模型</label>
+                            <select v-model="testConfig.model" class="form-select">
+                                <option v-for="model in availableModels" :key="model.id" :value="model.id">
+                                    {{ model.name }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <button @click="testApi" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;"
+                            :disabled="!testConfig.apiKey || !testConfig.message || testLoading">
+                            <span v-if="testLoading" class="loader"></span>
+                            <span v-else><i class="fas fa-paper-plane"></i> 发送测试</span>
+                        </button>
+                    </div>
+
+                    <div class="chat-panel">
+                        <div class="chat-header">
+                            <span style="font-weight: 600;">交互预览</span>
+                            <div v-if="testResult"
+                                style="display: flex; align-items: center; gap: 1rem; font-size: 0.8125rem;">
+                                <span :style="{ color: testResult.success ? 'var(--primary-400)' : '#ef4444' }">
+                                    <i class="fas"
+                                        :class="testResult.success ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                    {{ testResult.success ? '200 OK' : 'Error' }}
+                                </span>
+                                <span style="color: var(--text-muted);">{{ testResult.responseTime }}ms</span>
+                                <span v-if="testResult.tokens" style="color: var(--text-muted);">{{ testResult.tokens }}
+                                    Tokens</span>
+                            </div>
+                        </div>
+
+                        <div class="chat-messages">
+                            <div class="message user">
+                                <div class="message-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="message-content">
+                                    {{ testConfig.message }}
+                                </div>
+                            </div>
+
+                            <div v-if="testLoading || testResult" class="message assistant">
+                                <div class="message-avatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="message-content">
+                                    <div v-if="testLoading" class="typing-indicator">
+                                        <div class="typing-dot"></div>
+                                        <div class="typing-dot"></div>
+                                        <div class="typing-dot"></div>
+                                    </div>
+                                    <div v-else style="white-space: pre-wrap;">{{ testResult.response }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-area">
+                            <div class="chat-input-wrapper">
+                                <textarea v-model="testConfig.message" class="chat-input" placeholder="输入您的测试消息..."
+                                    @keydown.ctrl.enter="testApi"></textarea>
+                                <button class="send-btn" @click="testApi"
+                                    :disabled="!testConfig.apiKey || !testConfig.message || testLoading">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <p
+                                style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+                                Ctrl + Enter 快速发送
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Tab -->
+                <div v-if="activeTab === 'usage'">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">总请求数</div>
+                            <div class="stat-value">{{ usageStats.total_requests || 0 }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">总 Token 消耗</div>
+                            <div class="stat-value">{{ (usageStats.total_tokens || 0).toLocaleString() }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">今日请求</div>
+                            <div class="stat-value">{{ usageStats.today_requests || 0 }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">活跃密钥</div>
+                            <div class="stat-value">{{ apiKeys.filter(k => k.is_active).length }}</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">最近调用日志</h2>
+                            <button @click="fetchUsageLogs" class="btn btn-ghost">
+                                <i class="fas fa-sync-alt"></i>
+                                刷新
+                            </button>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>模型</th>
+                                        <th>端点</th>
+                                        <th>Tokens</th>
+                                        <th>状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="usageLogs.length === 0">
+                                        <td colspan="5"
+                                            style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                                            暂无使用记录
+                                        </td>
+                                    </tr>
+                                    <tr v-for="log in usageLogs" :key="log.id">
+                                        <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">
+                                            {{ formatDate(log.created_at) }}
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-success" style="background: var(--bg-elevated);">
+                                                {{ log.model || 'Unknown' }}
+                                            </span>
+                                        </td>
+                                        <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">
+                                            {{ log.method }} {{ log.endpoint }}
+                                        </td>
+                                        <td>{{ log.total_tokens || '-' }}</td>
+                                        <td>
+                                            <span class="badge"
+                                                :class="log.status_code < 400 ? 'badge-success' : 'badge-danger'">
+                                                {{ log.status_code }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Create API Key Modal -->
+        <div v-if="showCreateKeyModal" class="modal-overlay" @click.self="showCreateKeyModal = false">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">创建 API 密钥</h2>
+                </div>
+                <form @submit.prevent="createApiKey">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">密钥名称 *</label>
+                            <input v-model="createKeyForm.name" type="text" class="form-input" placeholder="例如：我的测试应用"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">默认模型</label>
+                            <select v-model="createKeyForm.model" class="form-select">
+                                <option v-for="model in availableModels" :key="model.id" :value="model.id">
+                                    {{ model.name }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">描述（可选）</label>
+                            <textarea v-model="createKeyForm.description" class="form-textarea"
+                                placeholder="备注此密钥的用途..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" @click="showCreateKeyModal = false" class="btn btn-ghost"
+                            style="flex: 1;">
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="flex: 1;" :disabled="createKeyLoading">
+                            <span v-if="createKeyLoading" class="loader"></span>
+                            <span v-else>创建</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast-container">
+            <transition-group name="list">
+                <div v-for="toast in toasts" :key="toast.id" class="toast" :class="'toast-' + toast.type">
+                    <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"
+                        :style="{ color: toast.type === 'success' ? 'var(--primary-400)' : '#ef4444' }"></i>
+                    <span>{{ toast.message }}</span>
+                </div>
+            </transition-group>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    user: null,
+                    token: null,
+                    activeTab: 'api-keys',
+                    mobileSidebarOpen: false,
+                    apiKeys: [],
+                    usageStats: {},
+                    usageLogs: [],
+                    showCreateKeyModal: false,
+                    createKeyLoading: false,
+                    testLoading: false,
+                    toasts: [],
+                    createKeyForm: {
+                        name: '',
+                        model: 'claude-haiku-4.5',
+                        description: ''
+                    },
+                    testConfig: {
+                        apiKey: '',
+                        model: 'claude-haiku-4.5',
+                        message: '你好，请介绍一下你自己。'
+                    },
+                    testResult: null,
+                    availableModels: []
+                }
+            },
+
+            mounted() {
+                this.checkAuth();
+            },
+
+            methods: {
+                showToast(message, type = 'success') {
+                    const id = Date.now();
+                    this.toasts.push({ id, message, type });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 3000);
+                },
+
+                checkAuth() {
+                    const token = localStorage.getItem('user_token');
+                    if (!token) {
+                        window.location.href = '/';
+                        return;
+                    }
+                    this.token = token;
+                    this.setupAxios();
+                    this.fetchUserProfile();
+                },
+
+                setupAxios() {
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+                },
+
+                async fetchUserProfile() {
+                    try {
+                        const response = await axios.get('/api/v1/users/profile');
+                        this.user = response.data;
+                        await this.loadData();
+                    } catch (error) {
+                        this.logout();
+                    }
+                },
+
+                async loadData() {
+                    await this.fetchAvailableModels();
+                    await Promise.all([
+                        this.fetchApiKeys(),
+                        this.fetchUsageStats(),
+                        this.fetchUsageLogs()
+                    ]);
+                },
+
+                getDefaultModels() {
+                    return [
+                        { id: 'claude-haiku-4.5', name: 'Claude Haiku 4.5' },
+                        { id: 'gpt-5.1-thinking', name: 'GPT-5.1 Thinking' },
+                        { id: 'gpt-5.1-instant', name: 'GPT-5.1 Instant' },
+                        { id: 'glm-4.6', name: 'GLM 4.6' },
+                        { id: 'grok-4.1-fast-non-reasoning', name: 'Grok 4.1 Fast Non-Reasoning' },
+                        { id: 'grok-4.1-fast-reasoning', name: 'Grok 4.1 Fast Reasoning' },
+                        { id: 'kimi-k2-thinking', name: 'Kimi K2 Thinking' },
+                        { id: 'deepseek-v3.2-thinking', name: 'DeepSeek v3.2 Thinking' }
+                    ];
+                },
+
+                async fetchAvailableModels() {
+                    const fallback = this.getDefaultModels();
+                    try {
+                        const response = await axios.get('/v1/models');
+                        const remoteModels = Array.isArray(response.data?.data) ? response.data.data : [];
+                        this.availableModels = remoteModels.length ? remoteModels.map(model => ({
+                            id: model.id,
+                            name: model.name || model.id
+                        })) : fallback;
+                    } catch (error) {
+                        console.error('获取模型列表失败，使用本地默认列表:', error);
+                        this.availableModels = fallback;
+                    }
+
+                    if (!this.availableModels.length) {
+                        this.availableModels = fallback;
+                    }
+
+                    const firstModelId = this.availableModels[0]?.id || 'claude-haiku-4.5';
+                    if (!this.availableModels.find(model => model.id === this.createKeyForm.model)) {
+                        this.createKeyForm.model = firstModelId;
+                    }
+                    if (!this.availableModels.find(model => model.id === this.testConfig.model)) {
+                        this.testConfig.model = firstModelId;
+                    }
+                },
+
+                async fetchApiKeys() {
+                    try {
+                        const response = await axios.get('/api/v1/users/api-keys');
+                        this.apiKeys = response.data.map(key => ({
+                            ...key,
+                            showToken: false
+                        }));
+                    } catch (error) {
+                        console.error('获取API密钥失败:', error);
+                    }
+                },
+
+                async fetchUsageStats() {
+                    try {
+                        const response = await axios.get('/api/v1/users/usage/stats');
+                        this.usageStats = response.data;
+                    } catch (error) {
+                        console.error('获取使用统计失败:', error);
+                    }
+                },
+
+                async fetchUsageLogs() {
+                    try {
+                        const response = await axios.get('/api/v1/users/usage/logs?limit=20');
+                        this.usageLogs = response.data;
+                    } catch (error) {
+                        console.error('获取使用日志失败:', error);
+                    }
+                },
+
+                async createApiKey() {
+                    this.createKeyLoading = true;
+                    try {
+                        await axios.post('/api/v1/users/api-keys', this.createKeyForm);
+                        this.showToast('API密钥创建成功！');
+                        this.showCreateKeyModal = false;
+                        this.createKeyForm = { name: '', model: 'claude-haiku-4.5', description: '' };
+                        await this.fetchApiKeys();
+                    } catch (error) {
+                        this.showToast('创建失败: ' + (error.response?.data?.detail || '未知错误'), 'error');
+                    } finally {
+                        this.createKeyLoading = false;
+                    }
+                },
+
+                async deleteApiKey(apiKey) {
+                    if (!confirm(`确定要删除API密钥 "${apiKey.name}" 吗？`)) {
+                        return;
+                    }
+
+                    try {
+                        await axios.delete(`/api/v1/users/api-keys/${apiKey.id}`);
+                        this.showToast('API密钥删除成功！');
+                        await this.fetchApiKeys();
+                    } catch (error) {
+                        this.showToast('删除失败: ' + (error.response?.data?.detail || '未知错误'), 'error');
+                    }
+                },
+
+                async testApi() {
+                    if (!this.testConfig.apiKey || !this.testConfig.message) {
+                        this.showToast('请选择API密钥并输入测试消息', 'error');
+                        return;
+                    }
+
+                    this.testLoading = true;
+                    this.testResult = null;
+                    const startTime = Date.now();
+
+                    try {
+                        const response = await axios.post('/v1/chat/completions', {
+                            model: this.testConfig.model,
+                            messages: [
+                                {
+                                    role: 'user',
+                                    content: this.testConfig.message
+                                }
+                            ],
+                            max_tokens: 1000
+                        }, {
+                            headers: {
+                                'Authorization': `Bearer ${this.testConfig.apiKey}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const responseTime = Date.now() - startTime;
+
+                        this.testResult = {
+                            success: true,
+                            responseTime: responseTime,
+                            tokens: response.data.usage?.total_tokens || 0,
+                            response: response.data.choices[0]?.message?.content || '无响应内容'
+                        };
+
+                        this.showToast('API测试成功！');
+
+                    } catch (error) {
+                        const responseTime = Date.now() - startTime;
+
+                        this.testResult = {
+                            success: false,
+                            responseTime: responseTime,
+                            response: error.response?.data?.error?.message || error.message || '测试失败'
+                        };
+
+                        this.showToast('API测试失败', 'error');
+                    } finally {
+                        this.testLoading = false;
+                    }
+                },
+
+                maskToken(token) {
+                    if (!token || token.length < 16) return token;
+                    const start = token.substring(0, 8);
+                    const end = token.substring(token.length - 8);
+                    return `${start}${'*'.repeat(16)}${end}`;
+                },
+
+                copyToClipboard(text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        this.showToast('已复制到剪贴板');
+                    }).catch(() => {
+                        this.showToast('复制失败', 'error');
+                    });
+                },
+
+                logout() {
+                    localStorage.removeItem('user_token');
+                    delete axios.defaults.headers.common['Authorization'];
+                    window.location.href = '/';
+                },
+
+                goHome() {
+                    window.location.href = '/';
+                },
+
+                goToAdmin() {
+                    window.location.href = '/admin.html';
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return '-';
+                    return new Date(dateString).toLocaleString('zh-CN');
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

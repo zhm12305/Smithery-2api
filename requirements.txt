@@ -1,0 +1,78 @@
+# Smithery Claude Proxy - 完整生产环境依赖
+# 恢复所有必要依赖包以确保服务正常运行
+
+# 核心Web框架
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+starlette>=0.27.0
+
+# HTTP客户端和请求处理
+httpx>=0.25.0
+requests>=2.31.0
+aiofiles>=23.2.1
+
+# 数据验证和设置
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+email-validator>=2.0.0
+
+# 数据库
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+
+# 认证和安全
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.6
+bcrypt==3.2.2
+
+# 日志系统
+structlog>=23.2.0
+python-json-logger>=2.0.7
+colorlog>=6.7.0
+
+# 模板引擎
+jinja2>=3.1.2
+
+# 环境配置
+python-dotenv>=1.0.0
+
+# 数据库驱动
+aiosqlite>=0.19.0
+
+# JSON处理
+orjson>=3.9.0
+
+# 时间处理
+python-dateutil>=2.8.0
+
+# 异步支持
+anyio>=3.7.0
+
+# WebSocket支持 (如果需要)
+websockets>=11.0.0
+
+# 类型检查支持
+typing-extensions>=4.8.0
+
+# 工具相关依赖
+beautifulsoup4>=4.12.0
+markdownify>=0.11.6
+pandas>=2.0.0
+matplotlib>=3.7.0
+numpy>=1.24.0
+html2text>=2020.1.16
+
+# 图片处理依赖
+Pillow>=10.0.0
+opencv-python>=4.8.0
+imageio>=2.31.0
+
+# MCP协议支持 - 关键依赖！
+mcp>=1.0.0
+
+# 字符编码处理
+charset-normalizer>=3.3.0
+
+# 时间和日期处理增强
+pytz>=2023.3

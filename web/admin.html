@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统管理 - Smithery API Proxy</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --admin-primary: #ef4444;
+            --admin-primary-dark: #dc2626;
+            --admin-secondary: #f97316;
+            --bg-dark: #0a0e1a;
+            --bg-card: #111827;
+            --bg-elevated: #1f2937;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            margin: 0;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-elevated);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+
+        .admin-dashboard {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .admin-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 800;
+            font-size: 1.25rem;
+        }
+
+        .admin-logo-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 1rem;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(249, 115, 22, 0.15));
+            color: var(--admin-primary);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+        }
+
+        .nav-item i {
+            width: 1.25rem;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .admin-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border-radius: 0.75rem;
+        }
+
+        .admin-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .admin-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .admin-role {
+            font-size: 0.75rem;
+            color: var(--admin-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--admin-primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: 70px;
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+        }
+
+        .topbar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-dark));
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.8), rgba(31, 41, 55, 0.8));
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.1), transparent);
+            border-radius: 50%;
+        }
+
+        .stat-label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .stat-meta {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        /* Card */
+        .card {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .badge-admin {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .action-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--admin-primary);
+        }
+
+        /* Config Section */
+        .config-panel {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--admin-primary);
+            border-radius: 1.25rem;
+            padding: 2rem;
+        }
+
+        .config-section {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            border-color: var(--admin-primary);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .input-group .form-input {
+            flex: 1;
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .help-text {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .code-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            color: var(--admin-primary);
+            display: inline-block;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            min-width: 300px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInRight 0.4s;
+        }
+
+        .toast-success {
+            border-left: 4px solid #34d399;
+        }
+
+        .toast-error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-left-color: white;
+            border-radius: 50%;
+            width: 1.25rem;
+            height: 1.25rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .topbar {
+                padding: 0 1rem;
+            }
+
+            .content-area {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                font-size: 0.8125rem;
+            }
+
+            th,
+            td {
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        /* 移动端响应式适配 */
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 1rem;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                transition: left 0.3s ease;
+                z-index: 200;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block !important;
+            }
+
+            .sidebar::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s;
+                z-index: -1;
+            }
+
+            .sidebar.active::before {
+                opacity: 1;
+                pointer-events: all;
+            }
+
+            .topbar-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .card {
+                padding: 1.5rem 1rem;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8125rem;
+            }
+
+            .btn i {
+                font-size: 0.875rem;
+            }
+
+            .topbar-title {
+                font-size: 1.125rem;
+            }
+
+            .topbar-actions .btn {
+                padding: 0.5rem;
+                gap: 0;
+            }
+
+            .topbar-actions .btn i {
+                margin: 0;
+            }
+
+            .topbar-actions .btn span {
+                display: none;
+            }
+
+            table {
+                font-size: 0.875rem;
+            }
+
+            .stat-value {
+                font-size: 1.75rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                max-width: 95%;
+                margin: 0 0.5rem;
+            }
+
+            .modal-header,
+            .modal-body,
+            .modal-footer {
+                padding: 1.25rem;
+            }
+
+            .toast-container {
+                top: 1rem;
+                right: 1rem;
+                left: 1rem;
+            }
+
+            .toast {
+                min-width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 1rem;
+            }
+
+            .topbar-title {
+                font-size: 1.125rem;
+            }
+
+            .hero {
+                padding: 4rem 1rem 2rem;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            table {
+                font-size: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .sidebar-nav li a {
+                font-size: 0.875rem;
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="admin-dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar" :class="{ active: mobileSidebarOpen }">
+            <div class="sidebar-header">
+                <div class="admin-logo">
+                    <div class="admin-logo-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    Admin
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item" :class="{ active: activeTab === 'users' }"
+                    @click.prevent="activeTab = 'users'; mobileSidebarOpen = false">
+                    <i class="fas fa-users"></i>
+                    <span>用户管理</span>
+                </a>
+                <a href="#" class="nav-item" :class="{ active: activeTab === 'api-keys' }"
+                    @click.prevent="activeTab = 'api-keys'; mobileSidebarOpen = false">
+                    <i class="fas fa-key"></i>
+                    <span>API 密钥</span>
+                </a>
+                <a href="#" class="nav-item" :class="{ active: activeTab === 'usage' }"
+                    @click.prevent="activeTab = 'usage'; mobileSidebarOpen = false">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>使用日志</span>
+                </a>
+                <a href="#" class="nav-item" :class="{ active: activeTab === 'config' }"
+                    @click.prevent="activeTab = 'config'; mobileSidebarOpen = false">
+                    <i class="fas fa-cogs"></i>
+                    <span>系统配置</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="admin-profile">
+                    <div class="admin-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="admin-info">
+                        <div class="admin-name">{{ adminUser?.username || 'Admin' }}</div>
+                        <div class="admin-role">Administrator</div>
+                    </div>
+                    <button class="logout-btn" @click="logout" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="topbar">
+                <button class="btn btn-ghost mobile-menu-btn" @click="mobileSidebarOpen = !mobileSidebarOpen">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="topbar-title">
+                    <span v-if="activeTab === 'users'">用户管理</span>
+                    <span v-else-if="activeTab === 'api-keys'">全局密钥管理</span>
+                    <span v-else-if="activeTab === 'usage'">系统日志</span>
+                    <span v-else-if="activeTab === 'config'">核心配置</span>
+                </h1>
+                <div class="topbar-actions">
+                    <button @click="goToUserSite" class="btn btn-ghost">
+                        <i class="fas fa-user"></i>
+                        用户前台
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Stats Overview -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">总用户</div>
+                        <div class="stat-value">{{ systemStats.users?.total || 0 }}</div>
+                        <div class="stat-meta">
+                            <i class="fas fa-circle" style="color: #34d399; font-size: 0.5rem;"></i>
+                            {{ systemStats.users?.active || 0 }} 活跃
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">API 密钥</div>
+                        <div class="stat-value">{{ systemStats.api_keys?.total || 0 }}</div>
+                        <div class="stat-meta">
+                            <i class="fas fa-check" style="color: #34d399; font-size: 0.5rem;"></i>
+                            {{ systemStats.api_keys?.active || 0 }} 有效
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">总请求</div>
+                        <div class="stat-value">{{ formatNumber(systemStats.usage?.total_requests || 0) }}</div>
+                        <div class="stat-meta">今日: {{ systemStats.usage?.today_requests || 0 }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">总 Token</div>
+                        <div class="stat-value">{{ formatNumber(systemStats.usage?.total_tokens || 0) }}</div>
+                        <div class="stat-meta">今日: {{ formatNumber(systemStats.usage?.today_tokens || 0) }}</div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div v-if="activeTab === 'users'">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">用户列表</h2>
+                            <button @click="fetchUsers" class="btn btn-ghost">
+                                <i class="fas fa-sync-alt"></i>
+                                刷新
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>用户</th>
+                                        <th>邮箱</th>
+                                        <th>状态</th>
+                                        <th>注册时间</th>
+                                        <th style="text-align: right;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="user in users" :key="user.id">
+                                        <td>
+                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                <strong style="color: var(--text-primary);">{{ user.username }}</strong>
+                                                <span v-if="user.is_admin" class="badge badge-admin">ADMIN</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            <span class="badge"
+                                                :class="user.is_active ? 'badge-success' : 'badge-danger'">
+                                                {{ user.is_active ? '正常' : '禁用' }}
+                                            </span>
+                                        </td>
+                                        <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">
+                                            {{ formatDate(user.created_at) }}
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <button @click="toggleUserStatus(user)" class="action-btn"
+                                                :title="user.is_active ? '禁用用户' : '启用用户'">
+                                                <i class="fas" :class="user.is_active ? 'fa-ban' : 'fa-check'"></i>
+                                            </button>
+                                            <button v-if="!user.is_admin || user.id !== adminUser.id"
+                                                @click="deleteUser(user)" class="action-btn danger" title="删除用户">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Keys Tab -->
+                <div v-if="activeTab === 'api-keys'">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">所有 API 密钥</h2>
+                            <button @click="fetchApiKeys" class="btn btn-ghost">
+                                <i class="fas fa-sync-alt"></i>
+                                刷新
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>密钥标识</th>
+                                        <th>名称</th>
+                                        <th>状态</th>
+                                        <th>调用次数</th>
+                                        <th style="text-align: right;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="key in apiKeys" :key="key.id">
+                                        <td
+                                            style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; color: var(--text-muted);">
+                                            {{ key.api_key.substring(0, 16) }}...
+                                        </td>
+                                        <td><strong style="color: var(--text-primary);">{{ key.name }}</strong></td>
+                                        <td>
+                                            <span class="badge"
+                                                :class="key.is_active ? 'badge-success' : 'badge-danger'">
+                                                {{ key.is_active ? '活跃' : '禁用' }}
+                                            </span>
+                                        </td>
+                                        <td>{{ key.usage_count }}</td>
+                                        <td style="text-align: right;">
+                                            <button @click="toggleApiKeyStatus(key)" class="action-btn">
+                                                {{ key.is_active ? '禁用' : '启用' }}
+                                            </button>
+                                            <button @click="deleteApiKey(key)" class="action-btn danger">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Logs Tab -->
+                <div v-if="activeTab === 'usage'">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">系统调用日志 (最近50条)</h2>
+                            <button @click="fetchUsageLogs" class="btn btn-ghost">
+                                <i class="fas fa-sync-alt"></i>
+                                刷新
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>模型</th>
+                                        <th>端点</th>
+                                        <th>Tokens</th>
+                                        <th>状态码</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="log in usageLogs" :key="log.id">
+                                        <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">
+                                            {{ formatDate(log.created_at) }}
+                                        </td>
+                                        <td>
+                                            <span class="badge"
+                                                style="background: var(--bg-elevated); color: var(--text-primary);">
+                                                {{ log.model || '-' }}
+                                            </span>
+                                        </td>
+                                        <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">
+                                            {{ log.method }} {{ log.endpoint }}
+                                        </td>
+                                        <td>{{ log.total_tokens }}</td>
+                                        <td>
+                                            <span class="badge"
+                                                :class="log.status_code < 400 ? 'badge-success' : 'badge-danger'">
+                                                {{ log.status_code }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Config Tab -->
+                <div v-if="activeTab === 'config'" style="max-width: 1000px;">
+                    <div class="config-panel">
+                        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem;">
+                            <i class="fas fa-key" style="color: var(--admin-primary);"></i>
+                            Smithery Token 配置
+                        </h2>
+                        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                            管理系统核心 Token，确保服务正常运行
+                        </p>
+
+                        <!-- Current Token -->
+                        <div>
+                            <label class="form-label">当前 Token</label>
+                            <div class="input-group">
+                                <input :type="showToken ? 'text' : 'password'" v-model="currentToken.current_token"
+                                    readonly class="form-input" style="font-size: 0.875rem;">
+                                <button @click="showToken = !showToken" class="btn btn-ghost">
+                                    <i :class="showToken ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                </button>
+                                <button @click="verifyCurrentToken" :disabled="verifyingCurrent" class="btn btn-ghost">
+                                    <span v-if="verifyingCurrent" class="loader"></span>
+                                    <span v-else><i class="fas fa-check-circle"></i> 验证</span>
+                                </button>
+                            </div>
+                            <div v-if="currentTokenVerificationResult" class="alert"
+                                :class="currentTokenVerificationResult.is_valid ? 'alert-success' : 'alert-error'">
+                                <i class="fas"
+                                    :class="currentTokenVerificationResult.is_valid ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                <span>{{ currentTokenVerificationResult.message }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Update Token -->
+                        <div class="config-section">
+                            <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">更新 Token</h3>
+                            <div class="form-group">
+                                <textarea v-model="newToken" class="form-textarea"
+                                    placeholder="粘贴新的 Smithery Token (以 base64- 开头)..."></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 0.75rem;">
+                                <button @click="verifyNewToken" :disabled="!newToken || verifyingNew"
+                                    class="btn btn-ghost" style="flex: 1;">
+                                    <span v-if="verifyingNew" class="loader"></span>
+                                    <span v-else><i class="fas fa-search"></i> 预检查</span>
+                                </button>
+                                <button @click="updateToken" :disabled="!newToken || updating" class="btn btn-primary"
+                                    style="flex: 1;">
+                                    <span v-if="updating" class="loader"></span>
+                                    <span v-else><i class="fas fa-save"></i> 保存并应用</span>
+                                </button>
+                            </div>
+
+                            <div v-if="newTokenVerificationResult" class="alert"
+                                :class="newTokenVerificationResult.is_valid ? 'alert-success' : 'alert-error'">
+                                <i class="fas"
+                                    :class="newTokenVerificationResult.is_valid ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                <span>{{ newTokenVerificationResult.message }}</span>
+                            </div>
+
+                            <div v-if="updateResult" class="alert"
+                                :class="updateResult.success ? 'alert-success' : 'alert-error'">
+                                <i class="fas"
+                                    :class="updateResult.success ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
+                                <div>
+                                    <div style="font-weight: 600;">{{ updateResult.message }}</div>
+                                    <div v-if="updateResult.note"
+                                        style="margin-top: 0.5rem; opacity: 0.8; font-size: 0.8125rem; white-space: pre-line;">
+                                        {{ updateResult.note }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Help Guide -->
+                        <div class="alert alert-info" style="margin-top: 1.5rem;">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <h5 style="font-weight: 600; margin-bottom: 0.5rem;">如何获取 Smithery Token?</h5>
+                                <ol style="margin-left: 1.25rem; line-height: 1.8;">
+                                    <li>登录 <a href="https://smithery.ai/playground" target="_blank"
+                                            style="color: var(--admin-primary); text-decoration: underline;">Smithery
+                                            Playground</a></li>
+                                    <li>F12 打开开发者工具 → Application → Local Storage → smithery.ai</li>
+                                    <li>找到 <span class="code-block">sb-spjawbfpwezjfmicopsl-auth-token</span></li>
+                                    <li>复制完整的 JSON Value，通过脚本转为 base64- 格式</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- wos-session Panel -->
+                    <div class="config-panel" style="margin-top: 2rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem;">
+                            <i class="fas fa-shield-alt" style="color: var(--admin-primary);"></i>
+                            wos-session 配置
+                        </h2>
+                        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                            Smithery 真正的认证 Cookie（Hapi Iron 加密 session）。Token 过期后只需更新此项。
+                        </p>
+
+                        <!-- Current Session -->
+                        <div>
+                            <label class="form-label">当前 wos-session</label>
+                            <div class="input-group">
+                                <input :type="showSession ? 'text' : 'password'" v-model="currentSession.current_session"
+                                    readonly class="form-input" style="font-size: 0.875rem;" placeholder="未配置">
+                                <button @click="showSession = !showSession" class="btn btn-ghost">
+                                    <i :class="showSession ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                </button>
+                                <button @click="verifyCurrentSession" :disabled="verifyingCurrentSession" class="btn btn-ghost">
+                                    <span v-if="verifyingCurrentSession" class="loader"></span>
+                                    <span v-else><i class="fas fa-check-circle"></i> 验证</span>
+                                </button>
+                            </div>
+                            <div v-if="currentSessionVerificationResult" class="alert"
+                                :class="currentSessionVerificationResult.is_valid ? 'alert-success' : 'alert-error'">
+                                <i class="fas"
+                                    :class="currentSessionVerificationResult.is_valid ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                <span>{{ currentSessionVerificationResult.message }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Update Session -->
+                        <div class="config-section">
+                            <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">更新 wos-session</h3>
+                            <div class="form-group">
+                                <textarea v-model="newSession" class="form-textarea"
+                                    placeholder="粘贴新的 wos-session (以 Fe26.2* 开头)..."></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 0.75rem;">
+                                <button @click="verifyNewSession" :disabled="!newSession || verifyingNewSession"
+                                    class="btn btn-ghost" style="flex: 1;">
+                                    <span v-if="verifyingNewSession" class="loader"></span>
+                                    <span v-else><i class="fas fa-search"></i> 预检查</span>
+                                </button>
+                                <button @click="updateSession" :disabled="!newSession || updatingSession" class="btn btn-primary"
+                                    style="flex: 1;">
+                                    <span v-if="updatingSession" class="loader"></span>
+                                    <span v-else><i class="fas fa-save"></i> 保存并应用</span>
+                                </button>
+                            </div>
+
+                            <div v-if="newSessionVerificationResult" class="alert"
+                                :class="newSessionVerificationResult.is_valid ? 'alert-success' : 'alert-error'">
+                                <i class="fas"
+                                    :class="newSessionVerificationResult.is_valid ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                <span>{{ newSessionVerificationResult.message }}</span>
+                            </div>
+
+                            <div v-if="updateSessionResult" class="alert"
+                                :class="updateSessionResult.success ? 'alert-success' : 'alert-error'">
+                                <i class="fas"
+                                    :class="updateSessionResult.success ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
+                                <div>
+                                    <div style="font-weight: 600;">{{ updateSessionResult.message }}</div>
+                                    <div v-if="updateSessionResult.note"
+                                        style="margin-top: 0.5rem; opacity: 0.8; font-size: 0.8125rem; white-space: pre-line;">
+                                        {{ updateSessionResult.note }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Help Guide -->
+                        <div class="alert alert-info" style="margin-top: 1.5rem;">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <h5 style="font-weight: 600; margin-bottom: 0.5rem;">如何获取 wos-session?</h5>
+                                <ol style="margin-left: 1.25rem; line-height: 1.8;">
+                                    <li>浏览器登录 <a href="https://smithery.ai/chat" target="_blank"
+                                            style="color: var(--admin-primary); text-decoration: underline;">smithery.ai/chat</a>，发送任意消息</li>
+                                    <li>F12 → Network → 找到 <code>/api/chat</code> 请求</li>
+                                    <li>Request Headers → Cookie → 复制 <span class="code-block">wos-session=</span> 后面的完整值</li>
+                                    <li>粘贴到上方输入框（以 <span class="code-block">Fe26.2*</span> 开头）</li>
+                                </ol>
+                                <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.8125rem;">
+                                    ⚠️ wos-session 是真正的认证密钥，Token 过期不影响它，但它本身也有时效（通常数天到数周）。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Toast Notification -->
+        <div class="toast-container">
+            <transition-group name="list">
+                <div v-for="toast in toasts" :key="toast.id" class="toast" :class="'toast-' + toast.type">
+                    <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"
+                        :style="{ color: toast.type === 'success' ? '#34d399' : '#ef4444' }"></i>
+                    <span>{{ toast.message }}</span>
+                </div>
+            </transition-group>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    adminUser: null,
+                    token: null,
+                    activeTab: 'users',
+                    mobileSidebarOpen: false,
+                    systemStats: {},
+                    users: [],
+                    apiKeys: [],
+                    usageLogs: [],
+                    toasts: [],
+
+                    // Token Management
+                    currentToken: { current_token: '' },
+                    newToken: '',
+                    showToken: false,
+                    verifyingCurrent: false,
+                    verifyingNew: false,
+                    updating: false,
+                    currentTokenVerificationResult: null,
+                    newTokenVerificationResult: null,
+                    updateResult: null,
+
+                    // wos-session Management
+                    currentSession: { current_session: '', is_configured: false },
+                    newSession: '',
+                    showSession: false,
+                    verifyingCurrentSession: false,
+                    verifyingNewSession: false,
+                    updatingSession: false,
+                    currentSessionVerificationResult: null,
+                    newSessionVerificationResult: null,
+                    updateSessionResult: null
+                }
+            },
+
+            mounted() {
+                this.checkAuth();
+            },
+
+            methods: {
+                showToast(message, type = 'success') {
+                    const id = Date.now();
+                    this.toasts.push({ id, message, type });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 3000);
+                },
+
+                formatNumber(num) {
+                    return num ? num.toLocaleString() : '0';
+                },
+
+                checkAuth() {
+                    const userToken = localStorage.getItem('user_token');
+                    const adminToken = localStorage.getItem('admin_token');
+                    const token = userToken || adminToken;
+
+                    if (token) {
+                        this.token = token;
+                        this.setupAxios();
+                        this.fetchAdminProfile();
+
+                        if (userToken && !adminToken) {
+                            localStorage.setItem('admin_token', userToken);
+                            localStorage.removeItem('user_token');
+                        }
+                    } else {
+                        window.location.href = '/';
+                    }
+                },
+
+                setupAxios() {
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+                },
+
+                async fetchAdminProfile() {
+                    try {
+                        const response = await axios.get('/api/v1/users/profile');
+                        if (response.data.is_admin) {
+                            this.adminUser = response.data;
+                            await this.loadData();
+                        } else {
+                            this.showToast('需要管理员权限', 'error');
+                            setTimeout(() => window.location.href = '/', 1500);
+                        }
+                    } catch (error) {
+                        localStorage.removeItem('admin_token');
+                        window.location.href = '/';
+                    }
+                },
+
+                async loadData() {
+                    await Promise.all([
+                        this.fetchSystemStats(),
+                        this.fetchUsers(),
+                        this.fetchApiKeys(),
+                        this.fetchUsageLogs(),
+                        this.fetchCurrentToken(),
+                        this.fetchCurrentSession()
+                    ]);
+                },
+
+                async fetchSystemStats() {
+                    try {
+                        const response = await axios.get('/api/v1/admin/usage/stats');
+                        this.systemStats = response.data;
+                    } catch (error) { console.error(error); }
+                },
+
+                async fetchUsers() {
+                    try {
+                        const response = await axios.get('/api/v1/admin/users');
+                        this.users = response.data;
+                    } catch (error) { console.error(error); }
+                },
+
+                async fetchApiKeys() {
+                    try {
+                        const response = await axios.get('/api/v1/admin/api-keys');
+                        this.apiKeys = response.data;
+                    } catch (error) { console.error(error); }
+                },
+
+                async fetchUsageLogs() {
+                    try {
+                        const response = await axios.get('/api/v1/admin/usage/logs?limit=50');
+                        this.usageLogs = response.data;
+                    } catch (error) { console.error(error); }
+                },
+
+                async toggleUserStatus(user) {
+                    try {
+                        await axios.put(`/api/v1/admin/users/${user.id}/status?is_active=${!user.is_active}`);
+                        user.is_active = !user.is_active;
+                        this.showToast(`用户已${user.is_active ? '启用' : '禁用'}`);
+                        await this.fetchSystemStats();
+                    } catch (error) {
+                        this.showToast('操作失败', 'error');
+                    }
+                },
+
+                async toggleApiKeyStatus(apiKey) {
+                    try {
+                        await axios.put(`/api/v1/admin/api-keys/${apiKey.id}`, { is_active: !apiKey.is_active });
+                        apiKey.is_active = !apiKey.is_active;
+                        this.showToast(`密钥已${apiKey.is_active ? '启用' : '禁用'}`);
+                        await this.fetchSystemStats();
+                    } catch (error) {
+                        this.showToast('操作失败', 'error');
+                    }
+                },
+
+                async deleteApiKey(apiKey) {
+                    if (confirm('确定要删除这个API密钥吗？')) {
+                        try {
+                            await axios.delete(`/api/v1/admin/api-keys/${apiKey.id}`);
+                            await this.fetchApiKeys();
+                            await this.fetchSystemStats();
+                            this.showToast('密钥已删除');
+                        } catch (error) {
+                            this.showToast('删除失败', 'error');
+                        }
+                    }
+                },
+
+                async deleteUser(user) {
+                    if (user.is_admin) return this.showToast('不能删除管理员', 'error');
+                    if (user.id === this.adminUser.id) return this.showToast('不能删除自己', 'error');
+
+                    if (confirm(`确定要删除用户 "${user.username}" 吗？此操作不可撤销！`)) {
+                        try {
+                            await axios.delete(`/api/v1/admin/users/${user.id}`);
+                            await this.fetchUsers();
+                            await this.fetchApiKeys();
+                            await this.fetchSystemStats();
+                            this.showToast('用户已删除');
+                        } catch (error) {
+                            this.showToast('删除失败', 'error');
+                        }
+                    }
+                },
+
+                logout() {
+                    localStorage.removeItem('admin_token');
+                    localStorage.removeItem('user_token');
+                    window.location.href = '/';
+                },
+
+                formatDate(dateString) {
+                    return new Date(dateString).toLocaleString('zh-CN');
+                },
+
+                // Token Management
+                async fetchCurrentToken() {
+                    try {
+                        const response = await axios.get('/api/v1/admin/config/smithery-token');
+                        this.currentToken = response.data;
+                    } catch (error) { console.error(error); }
+                },
+
+                async verifyCurrentToken() {
+                    if (!this.currentToken.current_token) return;
+                    this.verifyingCurrent = true;
+                    try {
+                        const response = await axios.post('/api/v1/admin/config/smithery-token/verify', {
+                            token: this.currentToken.current_token
+                        });
+                        this.currentTokenVerificationResult = response.data;
+                    } catch (error) {
+                        this.currentTokenVerificationResult = { is_valid: false, message: '验证失败' };
+                    } finally {
+                        this.verifyingCurrent = false;
+                    }
+                },
+
+                async verifyNewToken() {
+                    if (!this.newToken.trim()) return;
+                    this.verifyingNew = true;
+                    try {
+                        const response = await axios.post('/api/v1/admin/config/smithery-token/verify', {
+                            token: this.newToken.trim()
+                        });
+                        this.newTokenVerificationResult = response.data;
+                    } catch (error) {
+                        this.newTokenVerificationResult = { is_valid: false, message: '验证失败' };
+                    } finally {
+                        this.verifyingNew = false;
+                    }
+                },
+
+                async updateToken() {
+                    if (!this.newToken.trim()) return;
+                    if (!confirm('确定要更新 Token 吗？这可能会重启服务。')) return;
+
+                    this.updating = true;
+                    try {
+                        const response = await axios.post('/api/v1/admin/config/smithery-token', {
+                            token: this.newToken.trim()
+                        });
+                        this.updateResult = {
+                            success: true,
+                            message: response.data.message,
+                            note: response.data.note
+                        };
+                        await this.fetchCurrentToken();
+                        this.newToken = '';
+                        this.showToast('Token 更新成功');
+                    } catch (error) {
+                        this.updateResult = { success: false, message: error.response?.data?.detail || '更新失败' };
+                        this.showToast('更新失败', 'error');
+                    } finally {
+                        this.updating = false;
+                    }
+                },
+
+                goToUserSite() {
+                    window.location.href = '/dashboard.html';
+                },
+
+                // wos-session Management
+                async fetchCurrentSession() {
+                    try {
+                        const response = await axios.get('/api/v1/admin/config/wos-session');
+                        this.currentSession = response.data;
+                    } catch (error) { console.error(error); }
+                },
+
+                async verifyCurrentSession() {
+                    if (!this.currentSession.current_session) return;
+                    this.verifyingCurrentSession = true;
+                    try {
+                        const response = await axios.post('/api/v1/admin/config/wos-session/verify', {
+                            session: this.currentSession.current_session
+                        });
+                        this.currentSessionVerificationResult = response.data;
+                    } catch (error) {
+                        this.currentSessionVerificationResult = { is_valid: false, message: '验证失败' };
+                    } finally {
+                        this.verifyingCurrentSession = false;
+                    }
+                },
+
+                async verifyNewSession() {
+                    if (!this.newSession.trim()) return;
+                    this.verifyingNewSession = true;
+                    try {
+                        const response = await axios.post('/api/v1/admin/config/wos-session/verify', {
+                            session: this.newSession.trim()
+                        });
+                        this.newSessionVerificationResult = response.data;
+                    } catch (error) {
+                        this.newSessionVerificationResult = { is_valid: false, message: '验证失败' };
+                    } finally {
+                        this.verifyingNewSession = false;
+                    }
+                },
+
+                async updateSession() {
+                    if (!this.newSession.trim()) return;
+                    if (!confirm('确定要更新 wos-session 吗？')) return;
+
+                    this.updatingSession = true;
+                    try {
+                        const response = await axios.post('/api/v1/admin/config/wos-session', {
+                            session: this.newSession.trim()
+                        });
+                        this.updateSessionResult = {
+                            success: true,
+                            message: response.data.message,
+                            note: response.data.note
+                        };
+                        await this.fetchCurrentSession();
+                        this.newSession = '';
+                        this.showToast('wos-session 更新成功');
+                    } catch (error) {
+                        this.updateSessionResult = { success: false, message: error.response?.data?.detail || '更新失败' };
+                        this.showToast('更新失败', 'error');
+                    } finally {
+                        this.updatingSession = false;
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

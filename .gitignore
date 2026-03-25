@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment and secrets
+.env
+.env.local
+.env.production
+.env.*.local
+api_keys.json
+
+# Runtime data
+users.db
+*.db
+*.sqlite
+*.sqlite3
+users.db.backup.*
+data/
+logs/
+documents/
+
+# Docker / deployment artifacts
+*.pid
+*.out
+*.err
+docker-compose.override.yml
+
+# Certificates
+*.pem
+*.key
+*.crt
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

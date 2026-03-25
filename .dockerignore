@@ -1,0 +1,94 @@
+# 版本控制
+.git
+.gitignore
+.gitattributes
+
+# Python 缓存和编译文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+logs/
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 环境变量文件
+.env
+.env.local
+.env.production
+
+# 临时文件
+tmp/
+temp/
+.tmp/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 文档和说明
+README.md
+*.md
+docs/
+
+# 测试文件
+tests/
+test/
+*test*.py
+
+# 数据文件
+data/
+documents/
+
+# SSL证书
+*.pem
+*.key
+*.crt
+
+# Docker相关
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Node.js (如果有前端资源)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 配置文件（敏感信息）
+api_keys.json

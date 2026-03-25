@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  smithery-claude-proxy:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: smithery-claude-proxy
+    env_file:
+      - .env
+    expose:
+      - "20179"
+    networks:
+      - smithery-network
+    environment:
+      # 服务配置
+      - DOMAIN=${DOMAIN:-localhost}
+      - HOST=0.0.0.0
+      - PORT=20179
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      # 用户管理配置
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - DATABASE_URL=sqlite:///./users.db
+
+      # Smithery.ai配置
+      - SMITHERY_URL=${SMITHERY_URL:-https://smithery.ai}
+      - SMITHERY_AUTH_TOKEN=${SMITHERY_AUTH_TOKEN}
+      
+      # MCP配置
+      - MCP_TIMEOUT=${MCP_TIMEOUT:-30}
+      - MCP_RETRY_ATTEMPTS=${MCP_RETRY_ATTEMPTS:-3}
+
+      # MCP Playground 配置
+      - ENABLE_MCP_TOOLS=${ENABLE_MCP_TOOLS:-true}
+      - MCP_CACHE_TTL=${MCP_CACHE_TTL:-3600}
+      - MCP_MAX_CONCURRENT_CALLS=${MCP_MAX_CONCURRENT_CALLS:-5}
+      - MCP_TOOL_TIMEOUT=${MCP_TOOL_TIMEOUT:-30}
+      - MCP_SEARCH_PAGE_SIZE=${MCP_SEARCH_PAGE_SIZE:-20}
+
+      # 工具配置
+      - TOOLS_ENABLED=${TOOLS_ENABLED:-true}
+      - GOOGLE_SEARCH_API_KEY=${GOOGLE_SEARCH_API_KEY}
+      - GOOGLE_SEARCH_CX=${GOOGLE_SEARCH_CX}
+      - CODE_EXECUTION_ENABLED=${CODE_EXECUTION_ENABLED:-true}
+      - CODE_EXECUTION_TIMEOUT=${CODE_EXECUTION_TIMEOUT:-30}
+      - WEB_FETCH_TIMEOUT=${WEB_FETCH_TIMEOUT:-10}
+      - MAX_SEARCH_RESULTS=${MAX_SEARCH_RESULTS:-5}
+      
+      # 代理配置（可选）
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+    
+    restart: unless-stopped
+
+    # 端口映射
+    ports:
+      - "20179:20179"
+
+    # 数据卷
+    volumes:
+      - ./data:/app/data:rw
+      - ./logs:/app/logs:rw
+      - ./users.db:/app/users.db:rw
+      - ./api_keys.json:/app/api_keys.json:ro
+      - ./documents:/app/documents:rw
+      - ./.env:/app/.env:rw  # 改为读写，允许容器内更新 Token
+      - ./.env.example:/app/.env.example:rw  # 同步 .env.example
+      # Docker socket 挂载（用于自动重启容器）
+      # ⚠️ 警告：这会给容器 Docker 操作权限，仅在受信任环境使用
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # 挂载源代码（开发模式，代码修改后无需重建镜像）
+      # 生产环境建议注释掉，使用构建到镜像的代码
+      - ./src:/app/src:rw  # 改为读写，允许更新 config.py
+      - ./web:/app/web:ro
+      - ./start_server.py:/app/start_server.py:ro
+
+    # 健康检查 - 使用根路径避免触发MCP测试
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:20179/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx反向代理服务
+  nginx:
+    image: nginx:alpine
+    container_name: smithery-nginx
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+      - "8043:443"
+    volumes:
+      # nginx配置文件
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      # SSL证书
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/lib/letsencrypt:/var/lib/letsencrypt:ro
+      # 日志
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - smithery-claude-proxy
+    networks:
+      - smithery-network
+    command: ["nginx", "-g", "daemon off;"]
+
+# 网络定义
+networks:
+  smithery-network:
+    driver: bridge
+
+# 数据卷定义
+volumes:
+  smithery_data:
+    driver: local
+  smithery_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+  certbot_webroot:
+    driver: local
